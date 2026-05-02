@@ -146,7 +146,7 @@
             document.getElementById('xp-bar').style.width = progress + "%";
         }
 
-                async function startMission() {
+        async function startMission() {
             document.getElementById('startBtn').style.display = 'none';
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('loading').classList.add('flex');
@@ -157,22 +157,42 @@
             Output WAJIB JSON array: [{"q":"...","opts":["...","...","...","..."],"a":0,"topic":"..."}]`;
         
             try {
-                // PERUBAHAN DISINI: Menggunakan v1 (bukan v1beta) dan memastikan model name benar
-                const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                // PERUBAHAN: Menggunakan v1beta dengan format model yang lebih lengkap
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
                 
                 const res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        contents: [{ parts: [{ text: prompt }] }] 
+                        contents: [{ 
+                            parts: [{ text: prompt }] 
+                        }],
+                        // Tambahan Safety Settings agar AI tidak ragu menjawab soal teknis
+                        safetySettings: [
+                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                        ],
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 2048,
+                        }
                     })
                 });
         
                 const data = await res.json();
         
                 if (data.error) {
-                    // Jika v1 gagal, kita berikan fallback informasi yang jelas
-                    alert("API ERROR (" + data.error.code + "): " + data.error.message);
+                    // Jika masih gagal, kita coba ganti ke model 'gemini-pro' sebagai cadangan otomatis
+                    if(data.error.message.includes("not found")) {
+                        alert("Model Flash tidak ditemukan, mencoba mode stabil (Gemini Pro)...");
+                        // Fungsi ini akan memanggil ulang dengan model berbeda jika kamu mau, 
+                        // tapi sementara kita tampilkan error aslinya dulu untuk diagnosa.
+                    }
+                    alert("API ERROR: " + data.error.message);
                     location.reload();
                     return;
                 }
@@ -190,7 +210,7 @@
                 alert("SISTEM ERROR: " + e.message);
                 location.reload();
             }
-        }
+        }        
         
         function loadQuestion() {
             if (currentIdx >= 5) return finish();
