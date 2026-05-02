@@ -152,64 +152,55 @@
             document.getElementById('loading').classList.add('flex');
         
             const curLvl = document.getElementById('rank-display').innerText;
-            
-            const prompt = `Berikan 5 soal pilihan ganda SQL level ${curLvl} dalam Bahasa Indonesia. 
-            Output WAJIB JSON array: [{"q":"...","opts":["...","...","...","..."],"a":0,"topic":"..."}]`;
+            const prompt = `Berikan 5 soal pilihan ganda SQL level ${curLvl} dalam Bahasa Indonesia. Output WAJIB JSON array: [{"q":"...","opts":["...","...","...","..."],"a":0,"topic":"..."}]`;
         
-            try {
-                // PERUBAHAN: Menggunakan v1beta dengan format model yang lebih lengkap
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-                
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        contents: [{ 
-                            parts: [{ text: prompt }] 
-                        }],
-                        // Tambahan Safety Settings agar AI tidak ragu menjawab soal teknis
-                        safetySettings: [
-                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-                        ],
-                        generationConfig: {
-                            temperature: 0.7,
-                            topK: 40,
-                            topP: 0.95,
-                            maxOutputTokens: 2048,
-                        }
-                    })
-                });
+            // Daftar model yang akan dicoba secara berurutan
+            const modelList = [
+                "gemini-1.5-flash",
+                "gemini-1.5-pro",
+                "gemini-pro"
+            ];
         
-                const data = await res.json();
+            for (let modelName of modelList) {
+                try {
+                    console.log(`Mencoba model: ${modelName}`);
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                    
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: { temperature: 0.7 }
+                        })
+                    });
         
-                if (data.error) {
-                    // Jika masih gagal, kita coba ganti ke model 'gemini-pro' sebagai cadangan otomatis
-                    if(data.error.message.includes("not found")) {
-                        alert("Model Flash tidak ditemukan, mencoba mode stabil (Gemini Pro)...");
-                        // Fungsi ini akan memanggil ulang dengan model berbeda jika kamu mau, 
-                        // tapi sementara kita tampilkan error aslinya dulu untuk diagnosa.
-                    }
-                    alert("API ERROR: " + data.error.message);
-                    location.reload();
-                    return;
+                    const data = await res.json();
+        
+                    // Jika berhasil dan ada konten, langsung jalankan game
+                    if (data.candidates && data.candidates[0]) {
+                        let text = data.candidates[0].content.parts[0].text;
+                        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                        currentQuestions = JSON.parse(text);
+                        
+                        document.getElementById('home-screen').classList.add('hidden');
+                        document.getElementById('game-screen').classList.remove('hidden');
+                        loadQuestion();
+                        return; // Keluar dari fungsi karena sudah berhasil
+                    } 
+                    
+                    // Jika error dari Google (seperti model not found), lanjut ke model berikutnya di loop
+                    console.warn(`Model ${modelName} gagal, mencoba model berikutnya...`);
+                    
+                } catch (e) {
+                    console.error(`Gagal pada model ${modelName}:`, e);
+                    // Lanjut ke model berikutnya
                 }
-        
-                let text = data.candidates[0].content.parts[0].text;
-                text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                
-                currentQuestions = JSON.parse(text);
-                
-                document.getElementById('home-screen').classList.add('hidden');
-                document.getElementById('game-screen').classList.remove('hidden');
-                loadQuestion();
-        
-            } catch (e) {
-                alert("SISTEM ERROR: " + e.message);
-                location.reload();
             }
+        
+            // Jika semua model gagal
+            alert("SEMUA MODEL GAGAL. Silakan cek: \n1. Apakah API Key sudah benar?\n2. Apakah kuota Google AI Studio habis?\n3. Apakah internet stabil?");
+            location.reload();
         }        
         
         function loadQuestion() {
