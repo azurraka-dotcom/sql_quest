@@ -48,34 +48,54 @@
         let currentIdx = 0;
     
         async function startMission() {
+            // Efek Visual Loading
             document.getElementById('startBtn').style.display = 'none';
             document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('loading').classList.add('flex');
     
             const prompt = `Berikan 5 soal pilihan ganda SQL level Junior dalam Bahasa Indonesia. 
             Output WAJIB JSON array murni: [{"q":"soal","opts":["a","b","c","d"],"a":0}]`;
     
             try {
-                // PERUBAHAN UTAMA: Menggunakan model 'gemini-pro' yang lebih stabil
-                const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${MY_API_KEY}`;
+                // Jalur v1beta biasanya lebih fleksibel untuk model-model baru di berbagai region
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${MY_API_KEY}`;
                 
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        contents: [{ parts: [{ text: prompt }] }] 
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 1024,
+                        }
                     })
                 });
     
                 const data = await response.json();
     
-                // Cek jika error
+                // Diagnosa Error Langsung
                 if (data.error) {
-                    alert("DETEKSI ERROR: " + data.error.message);
+                    // Jika error 404 muncul lagi, kita berikan instruksi spesifik
+                    if(data.error.code === 404) {
+                        alert("ERROR 404: Google tidak menemukan model ini di regionmu. Coba aktifkan VPN (Singapura/USA) dan refresh halaman.");
+                    } else {
+                        alert("GOOGLE API ERROR: " + data.error.message);
+                    }
                     location.reload();
                     return;
                 }
     
-                // Parsing jawaban
+                // Validasi Respon AI
+                if (!data.candidates || data.candidates.length === 0) {
+                    alert("AI tidak memberikan respon. Coba klik Start Mission lagi.");
+                    location.reload();
+                    return;
+                }
+    
+                // Parsing Data
                 let text = data.candidates[0].content.parts[0].text;
                 text = text.replace(/```json/g, '').replace(/```/g, '').trim();
                 currentQuestions = JSON.parse(text);
@@ -85,14 +105,14 @@
                 renderQuestion();
     
             } catch (e) {
-                alert("SISTEM ERROR: " + e.message + "\nCoba gunakan VPN jika tetap gagal.");
+                alert("SISTEM ERROR: " + e.message);
                 location.reload();
             }
         }
     
         function renderQuestion() {
             if (currentIdx >= 5) {
-                alert("Misi Selesai! Kamu hebat.");
+                alert("Misi Selesai! Kamu telah menyelesaikan tantangan SQL.");
                 location.reload();
                 return;
             }
@@ -103,7 +123,7 @@
             
             q.opts.forEach((o, i) => {
                 const b = document.createElement('button');
-                b.className = "w-full p-4 glass rounded-2xl text-left hover:bg-slate-800 transition border border-slate-700";
+                b.className = "w-full p-4 glass rounded-2xl text-left hover:bg-slate-800 transition border border-slate-700 active:bg-cyan-900";
                 b.innerText = o;
                 b.onclick = () => {
                     currentIdx++;
