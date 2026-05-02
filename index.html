@@ -5,52 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SQL Quest: AI Mastery</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#020617">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap');
-        
-        :root { --neon-blue: #00f2ff; --neon-purple: #bc13fe; }
-        body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        :root { --neon-blue: #00f2ff; }
+        body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; }
         .font-game { font-family: 'Orbitron', sans-serif; }
-        
-        .neon-border { border: 1px solid var(--neon-blue); box-shadow: 0 0 10px rgba(0, 242, 255, 0.2); }
         .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        
         .btn-primary { background: linear-gradient(45deg, #06b6d4, #8b5cf6); transition: 0.3s; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(6, 182, 212, 0.5); }
-        
+        .btn-primary:active { transform: scale(0.95); }
         .loader { width: 40px; height: 40px; border: 4px solid #1e293b; border-top: 4px solid var(--neon-blue); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .xp-bar-fill { transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center p-4">
 
+    <!-- 1. SETUP SCREEN (API KEY) -->
     <div id="setup-screen" class="w-full max-w-md mt-10 glass p-8 rounded-3xl hidden">
         <h2 class="font-game text-2xl text-cyan-400 mb-6"><i class="fas fa-plug mr-2"></i>LINK AI CORE</h2>
-        <p class="text-sm text-slate-400 mb-6">Masukkan Gemini API Key untuk mengaktifkan AI Generator.</p>
-        <input type="password" id="apiKeyInput" placeholder="Paste API Key di sini..." class="w-full p-4 rounded-xl bg-slate-900 border border-slate-700 mb-6 focus:border-cyan-400 outline-none">
-        <button onclick="saveApiKey()" class="w-full btn-primary p-4 rounded-xl font-bold uppercase tracking-wider">Connect System</button>
+        <input type="password" id="apiKeyInput" placeholder="Masukkan Gemini API Key..." class="w-full p-4 rounded-xl bg-slate-900 border border-slate-700 mb-6 text-white outline-none focus:border-cyan-400">
+        <button onclick="saveApiKey()" class="w-full btn-primary p-4 rounded-xl font-bold uppercase">Connect System</button>
     </div>
 
+    <!-- 2. HOME SCREEN -->
     <div id="home-screen" class="w-full max-w-md flex flex-col items-center">
         <div class="mt-8 mb-10 text-center">
-            <div class="relative inline-block mb-4">
-                <div class="absolute inset-0 bg-cyan-500 blur-2xl opacity-20"></div>
-                <img src="https://cdn-icons-png.flaticon.com/512/2721/2721620.png" width="80" class="relative z-10" alt="Logo">
-            </div>
             <h1 class="font-game text-3xl font-bold tracking-tighter">SQL <span class="text-cyan-400">QUEST</span></h1>
-            <p class="text-xs tracking-[0.3em] text-slate-500 uppercase">Neural Network Edition</p>
+            <p class="text-[10px] tracking-[0.3em] text-slate-500 uppercase">Neural Network Edition</p>
         </div>
 
-        <div class="w-full glass p-6 rounded-3xl mb-8 relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fas fa-microchip text-5xl"></i></div>
+        <div class="w-full glass p-6 rounded-3xl mb-8">
             <div class="flex justify-between items-center mb-4">
                 <div>
-                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Architect Rank</p>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Rank</p>
                     <h2 id="rank-display" class="font-game text-xl text-cyan-400">Loading...</h2>
                 </div>
                 <div class="text-right">
@@ -58,61 +47,57 @@
                     <h2 class="font-game text-xl" id="xp-display">0</h2>
                 </div>
             </div>
-            
             <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div id="xp-bar" class="xp-bar-fill bg-gradient-to-right from-cyan-500 to-purple-500 h-full w-0"></div>
-            </div>
-            <div class="flex justify-between mt-2 text-[10px] text-slate-500 font-bold uppercase">
-                <span id="current-lv-label">Novice</span>
-                <span id="next-lv-label">Junior</span>
+                <div id="xp-bar" class="bg-cyan-500 h-full w-0 transition-all duration-1000"></div>
             </div>
         </div>
 
-        <button id="startBtn" onclick="startMission()" class="w-full btn-primary py-5 rounded-2xl font-game text-lg shadow-lg group">
-            START MISSION <i class="fas fa-chevron-right ml-2 group-hover:translate-x-1 transition"></i>
+        <button id="startBtn" onclick="startMission()" class="w-full btn-primary py-5 rounded-2xl font-game text-lg shadow-lg">
+            START MISSION <i class="fas fa-chevron-right ml-2"></i>
+        </button>
+
+        <button onclick="resetApi()" class="mt-8 text-[10px] text-slate-500 uppercase tracking-widest hover:text-red-400">
+            <i class="fas fa-sync-alt mr-1"></i> Reset API Key
         </button>
 
         <div id="loading" class="hidden flex-col items-center mt-8">
             <div class="loader mb-4"></div>
-            <p class="font-game text-[10px] text-cyan-400 animate-pulse tracking-widest">Generating Dynamic Quiz...</p>
+            <p class="font-game text-[10px] text-cyan-400 animate-pulse uppercase">Syncing with AI...</p>
         </div>
     </div>
 
+    <!-- 3. GAMEPLAY SCREEN -->
     <div id="game-screen" class="w-full max-w-md hidden">
         <div class="flex justify-between items-center mb-6 px-2">
             <div class="font-game text-xs text-slate-500">QUEST: <span id="q-count" class="text-white">1/5</span></div>
-            <div class="font-game text-xs text-slate-500">STREAK: <span id="session-score" class="text-cyan-400">0</span></div>
+            <div class="font-game text-xs text-slate-500">SCORE: <span id="session-score" class="text-cyan-400">0</span></div>
         </div>
-
-        <div class="glass p-8 rounded-[2rem] relative border-t-4 border-cyan-500">
-            <div id="timer-box" class="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-500 text-slate-900 px-4 py-1 rounded-full text-xs font-bold font-game">30s</div>
-            <h2 id="q-text" class="text-lg font-semibold leading-relaxed text-center mb-8">...</h2>
+        <div class="glass p-8 rounded-[2rem] border-t-4 border-cyan-500">
+            <h2 id="q-text" class="text-lg font-semibold text-center mb-8">...</h2>
             <div id="options" class="grid gap-4"></div>
         </div>
     </div>
 
+    <!-- 4. RESULT SCREEN -->
     <div id="summary-screen" class="w-full max-w-md hidden">
         <div class="glass p-8 rounded-[2rem] text-center">
-            <h2 class="font-game text-2xl mb-2">MISSION COMPLETE</h2>
-            <div class="text-5xl font-game text-cyan-400 my-6">+<span id="xp-gained">0</span> XP</div>
-            
+            <h2 class="font-game text-2xl mb-2 text-cyan-400">MISSION COMPLETE</h2>
+            <div class="text-5xl font-game my-6">+<span id="xp-gained">0</span> XP</div>
             <div id="ai-summary-box" class="text-left bg-slate-900/50 p-6 rounded-2xl border border-slate-700 hidden">
-                <h4 class="text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest"><i class="fas fa-robot mr-2"></i>AI Briefing</h4>
-                <div id="ai-text" class="text-sm leading-relaxed text-slate-300"></div>
+                <p id="ai-text" class="text-sm leading-relaxed text-slate-300"></p>
             </div>
-            
-            <button onclick="location.reload()" class="w-full mt-8 p-4 rounded-xl bg-slate-800 font-bold hover:bg-slate-700 transition">BACK TO HUB</button>
+            <button onclick="location.reload()" class="w-full mt-8 p-4 rounded-xl bg-slate-800 font-bold">BACK TO HUB</button>
         </div>
     </div>
 
     <script>
+        // Data & State
         let apiKey = localStorage.getItem('gemini_api_key');
         let xp = parseInt(localStorage.getItem('sql_xp_v3')) || 0;
         let currentQuestions = [];
         let currentIdx = 0;
         let correctCount = 0;
         let wrongAnswers = [];
-        let timer;
 
         const levels = [
             { name: "Novice", req: 0 },
@@ -122,22 +107,27 @@
             { name: "Architect", req: 15000 }
         ];
 
-        window.onload = () => {
+        // Inisialisasi Aplikasi
+        window.onload = function() {
             if (!apiKey) {
                 document.getElementById('setup-screen').classList.remove('hidden');
                 document.getElementById('home-screen').classList.add('hidden');
             } else {
                 renderDashboard();
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('sw.js');
-                }
             }
         };
 
         function saveApiKey() {
-            const input = document.getElementById('apiKeyInput').value;
-            if(input.length > 30) {
-                localStorage.setItem('gemini_api_key', input);
+            const val = document.getElementById('apiKeyInput').value.trim();
+            if(val.length > 20) {
+                localStorage.setItem('gemini_api_key', val);
+                location.reload();
+            } else { alert("API Key tidak valid!"); }
+        }
+
+        function resetApi() {
+            if(confirm("Hapus API Key dan reset game?")) {
+                localStorage.removeItem('gemini_api_key');
                 location.reload();
             }
         }
@@ -145,25 +135,24 @@
         function renderDashboard() {
             let cur = levels[0], nxt = levels[1];
             for (let i = 0; i < levels.length; i++) {
-                if (xp >= levels[i].req) { cur = levels[i]; nxt = levels[i+1] || cur; }
+                if (xp >= levels[i].req) {
+                    cur = levels[i];
+                    nxt = levels[i+1] || { name: "MAX", req: xp };
+                }
             }
             document.getElementById('rank-display').innerText = cur.name.toUpperCase();
             document.getElementById('xp-display').innerText = xp;
-            document.getElementById('current-lv-label').innerText = cur.name;
-            document.getElementById('next-lv-label').innerText = nxt.name;
-            
-            const progress = cur === nxt ? 100 : ((xp - cur.req) / (nxt.req - cur.req)) * 100;
+            const progress = nxt.name === "MAX" ? 100 : ((xp - cur.req) / (nxt.req - cur.req)) * 100;
             document.getElementById('xp-bar').style.width = progress + "%";
         }
 
         async function startMission() {
-            document.getElementById('startBtn').classList.add('hidden');
+            document.getElementById('startBtn').style.display = 'none';
             document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('loading').classList.add('flex');
 
             const curLvl = document.getElementById('rank-display').innerText;
-            const prompt = `Berikan 5 soal pilihan ganda tentang SQL/BI Tools untuk level ${curLvl}. 
-            Format JSON murni array of objects: [{"q": "...", "opts": ["...", "...", "...", "..."], "a": indexBenar, "topic": "..."}]. 
-            Gunakan bahasa Indonesia profesional.`;
+            const prompt = `Berikan 5 soal pilihan ganda SQL level ${curLvl}. Output WAJIB JSON murni array: [{"q":"soal","opts":["a","b","c","d"],"a":0,"topic":"topik"}]. Tanpa teks lain.`;
 
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
@@ -179,7 +168,7 @@
                 document.getElementById('game-screen').classList.remove('hidden');
                 loadQuestion();
             } catch (e) {
-                alert("AI Core Error. Periksa API Key atau Koneksi.");
+                alert("Koneksi Gagal: " + e.message);
                 location.reload();
             }
         }
@@ -187,7 +176,7 @@
         function loadQuestion() {
             if (currentIdx >= 5) return finish();
             const q = currentQuestions[currentIdx];
-            document.getElementById('q-count').innerText = `${currentIdx + 1}/5`;
+            document.getElementById('q-count').innerText = (currentIdx + 1) + "/5";
             document.getElementById('q-text').innerText = q.q;
             const optDiv = document.getElementById('options');
             optDiv.innerHTML = '';
@@ -199,28 +188,14 @@
                 b.onclick = () => answer(i);
                 optDiv.appendChild(b);
             });
-            startTimer();
-        }
-
-        function startTimer() {
-            let s = 30;
-            clearInterval(timer);
-            const box = document.getElementById('timer-box');
-            timer = setInterval(() => {
-                s--;
-                box.innerText = s + "s";
-                if(s <= 0) { clearInterval(timer); answer(-1); }
-            }, 1000);
         }
 
         function answer(idx) {
-            clearInterval(timer);
-            const q = currentQuestions[currentIdx];
-            if (idx === q.a) {
+            if (idx === currentQuestions[currentIdx].a) {
                 correctCount++;
                 document.getElementById('session-score').innerText = correctCount;
             } else {
-                wrongAnswers.push({ q: q.q, topic: q.topic });
+                wrongAnswers.push(currentQuestions[currentIdx].topic);
             }
             currentIdx++;
             loadQuestion();
@@ -229,22 +204,14 @@
         async function finish() {
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('summary-screen').classList.remove('hidden');
-            
-            const earned = correctCount * 250;
+            const earned = correctCount * 200;
             xp += earned;
             localStorage.setItem('sql_xp_v3', xp);
             document.getElementById('xp-gained').innerText = earned;
 
             if (wrongAnswers.length > 0) {
-                const prompt = `Analisis kesalahan belajar ini: ${JSON.stringify(wrongAnswers)}. Berikan semangat dan 1 tips singkat dalam 2 kalimat.`;
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
                 document.getElementById('ai-summary-box').classList.remove('hidden');
-                document.getElementById('ai-text').innerText = data.candidates[0].content.parts[0].text;
+                document.getElementById('ai-text').innerText = "Kamu perlu belajar lagi di topik: " + [...new Set(wrongAnswers)].join(", ");
             }
         }
     </script>
