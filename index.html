@@ -46,30 +46,36 @@
         const MY_API_KEY = "AIzaSyCzhdDfWFibqwoesMN8uDirtfT7EBhfLgo";
         let currentQuestions = [];
         let currentIdx = 0;
-
+    
         async function startMission() {
             document.getElementById('startBtn').style.display = 'none';
             document.getElementById('loading').classList.remove('hidden');
-
+    
             const prompt = `Berikan 5 soal pilihan ganda SQL level Junior dalam Bahasa Indonesia. 
             Output WAJIB JSON array murni: [{"q":"soal","opts":["a","b","c","d"],"a":0}]`;
-
+    
             try {
-                // Mencoba jalur v1beta dengan model flash
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${MY_API_KEY}`, {
+                // PERUBAHAN UTAMA: Menggunakan model 'gemini-pro' yang lebih stabil
+                const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${MY_API_KEY}`;
+                
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    body: JSON.stringify({ 
+                        contents: [{ parts: [{ text: prompt }] }] 
+                    })
                 });
-
+    
                 const data = await response.json();
-
+    
+                // Cek jika error
                 if (data.error) {
-                    alert("ERROR GOOGLE: " + data.error.message);
+                    alert("DETEKSI ERROR: " + data.error.message);
                     location.reload();
                     return;
                 }
-
+    
+                // Parsing jawaban
                 let text = data.candidates[0].content.parts[0].text;
                 text = text.replace(/```json/g, '').replace(/```/g, '').trim();
                 currentQuestions = JSON.parse(text);
@@ -77,16 +83,16 @@
                 document.getElementById('home-screen').classList.add('hidden');
                 document.getElementById('game-screen').classList.remove('hidden');
                 renderQuestion();
-
+    
             } catch (e) {
-                alert("SISTEM ERROR: " + e.message);
+                alert("SISTEM ERROR: " + e.message + "\nCoba gunakan VPN jika tetap gagal.");
                 location.reload();
             }
         }
-
+    
         function renderQuestion() {
             if (currentIdx >= 5) {
-                alert("Misi Selesai!");
+                alert("Misi Selesai! Kamu hebat.");
                 location.reload();
                 return;
             }
@@ -97,7 +103,7 @@
             
             q.opts.forEach((o, i) => {
                 const b = document.createElement('button');
-                b.className = "w-full p-4 glass rounded-2xl text-left hover:bg-slate-800 transition";
+                b.className = "w-full p-4 glass rounded-2xl text-left hover:bg-slate-800 transition border border-slate-700";
                 b.innerText = o;
                 b.onclick = () => {
                     currentIdx++;
