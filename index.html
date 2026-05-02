@@ -146,33 +146,62 @@
             document.getElementById('xp-bar').style.width = progress + "%";
         }
 
-        async function startMission() {
-            document.getElementById('startBtn').style.display = 'none';
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('loading').classList.add('flex');
-
-            const curLvl = document.getElementById('rank-display').innerText;
-            const prompt = `Berikan 5 soal pilihan ganda SQL level ${curLvl}. Output WAJIB JSON murni array: [{"q":"soal","opts":["a","b","c","d"],"a":0,"topic":"topik"}]. Tanpa teks lain.`;
-
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
-                let text = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
-                currentQuestions = JSON.parse(text);
+            async function startMission() {
+                // 1. Visual Loading
+                document.getElementById('startBtn').style.display = 'none';
+                document.getElementById('loading').classList.remove('hidden');
+                document.getElementById('loading').classList.add('flex');
+            
+                const curLvl = document.getElementById('rank-display').innerText;
                 
-                document.getElementById('home-screen').classList.add('hidden');
-                document.getElementById('game-screen').classList.remove('hidden');
-                loadQuestion();
-            } catch (e) {
-                alert("Koneksi Gagal: " + e.message);
-                location.reload();
+                // Prompt yang lebih ketat
+                const prompt = `Berikan 5 soal pilihan ganda SQL level ${curLvl} dalam Bahasa Indonesia. 
+                Output harus MURNI JSON array tanpa teks tambahan: 
+                [{"q":"pertanyaan","opts":["a","b","c","d"],"a":0,"topic":"topik"}]`;
+            
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+            
+                    const data = await res.json();
+            
+                    // 2. CEK ERROR DARI GOOGLE
+                    if (data.error) {
+                        alert("GOOGLE API ERROR: " + data.error.message);
+                        location.reload();
+                        return;
+                    }
+            
+                    // 3. CEK APAKAH JAWABAN KOSONG (SAFETY FILTER)
+                    if (!data.candidates || !data.candidates[0]) {
+                        alert("AI menolak menjawab. Coba lagi atau cek pengaturan safety di Google AI Studio.");
+                        location.reload();
+                        return;
+                    }
+            
+                    let text = data.candidates[0].content.parts[0].text;
+                    
+                    // Pembersihan Markdown
+                    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                    
+                    currentQuestions = JSON.parse(text);
+                    
+                    // 4. MULAI GAME
+                    document.getElementById('home-screen').classList.add('hidden');
+                    document.getElementById('game-screen').classList.remove('hidden');
+                    loadQuestion();
+            
+                } catch (e) {
+                    // Jika JSON.parse gagal atau masalah jaringan
+                    alert("SISTEM ERROR: " + e.message + "\n\nPastikan API Key benar dan internet stabil.");
+                    console.error(e);
+                    location.reload();
+                }
             }
-        }
-
+        
         function loadQuestion() {
             if (currentIdx >= 5) return finish();
             const q = currentQuestions[currentIdx];
