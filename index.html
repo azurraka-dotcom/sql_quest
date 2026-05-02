@@ -156,32 +156,47 @@
             document.getElementById('xp-bar').style.width = progress + "%";
         }
 
-        async function startMission() {
-            document.getElementById('startBtn').classList.add('hidden');
-            document.getElementById('loading').classList.remove('hidden');
-
-            const curLvl = document.getElementById('rank-display').innerText;
-            const prompt = `Berikan 5 soal pilihan ganda tentang SQL/BI Tools untuk level ${curLvl}. 
-            Format JSON murni array of objects: [{"q": "...", "opts": ["...", "...", "...", "..."], "a": indexBenar, "topic": "..."}]. 
-            Gunakan bahasa Indonesia profesional.`;
-
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const data = await res.json();
-                let text = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
-                currentQuestions = JSON.parse(text);
-                
-                document.getElementById('home-screen').classList.add('hidden');
-                document.getElementById('game-screen').classList.remove('hidden');
-                loadQuestion();
-            } catch (e) {
-                alert("AI Core Error. Periksa API Key atau Koneksi.");
-                location.reload();
+            async function startMission() {
+        document.getElementById('startBtn').classList.add('hidden');
+        document.getElementById('loading').classList.remove('hidden');
+    
+        const curLvl = document.getElementById('rank-display').innerText;
+        // Prompt dipertegas agar tidak memberi teks tambahan
+        const prompt = `Berikan 5 soal pilihan ganda SQL level ${curLvl}. 
+        HANYA OUTPUT JSON ARRAY. DILARANG MEMBERI TEKS PENJELASAN APAPUN.
+        Format: [{"q": "...", "opts": ["...", "...", "...", "..."], "a": indexBenar, "topic": "..."}]`;
+    
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+    
+            const data = await res.json();
+            
+            // Cek jika API mengembalikan error (misal API Key salah)
+            if (data.error) {
+                throw new Error("API Error: " + data.error.message);
             }
+    
+            let text = data.candidates[0].content.parts[0].text;
+            
+            // Pembersihan ekstra jika Gemini ngeyel kasih markdown
+            text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            
+            currentQuestions = JSON.parse(text);
+            
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            loadQuestion();
+        } catch (e) {
+            // Alert ini sekarang akan memunculkan pesan error yang lebih spesifik
+            alert("DETAIL ERROR: " + e.message);
+            console.error(e);
+            location.reload();
+        }
+    }
         }
 
         function loadQuestion() {
